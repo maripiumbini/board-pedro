@@ -98,7 +98,7 @@ body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:
 .divider span { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--bg); padding:2px 14px; font-size:10px; color:var(--gray2); border-radius:20px; border:.5px solid var(--border); white-space:nowrap; }
 .grid-7 { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
 .week   { margin-bottom:4px; }
-.dow    { font-size:9px; font-weight:700; color:var(--gray2); text-align:center; padding:3px 0; text-transform:uppercase; letter-spacing:.04em; }
+.dow     { font-size:9px; font-weight:700; color:var(--gray2); text-align:center; padding:3px 0; text-transform:uppercase; letter-spacing:.04em; }
 .day { background:var(--bg2); border:.5px solid var(--border); border-radius:7px; padding:6px; min-height:80px; }
 .day.has-event-marker { border-color:var(--greenD); }
 .day-empty { background:#141414; border:.5px solid #1e1e1e; border-radius:7px; min-height:80px; opacity:.3; }
@@ -159,7 +159,6 @@ body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:
 
 <div class="loading-bar" id="loading-bar"></div>
 
-<!-- SETUP BANNER -->
 <div class="setup-banner hidden" id="setup-banner">
   ⚙️ Cole a URL do seu Apps Script para conectar ao Google Sheets:
   <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/.../exec">
@@ -167,7 +166,6 @@ body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:
   <span id="setup-status"></span>
 </div>
 
-<!-- TOP BAR -->
 <div class="topbar">
   <div class="topbar-brand">
     <span class="status-dot" id="status-dot"></span>
@@ -208,7 +206,6 @@ body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:
   </div>
 </div>
 
-<!-- JUMP -->
 <div class="jump-overlay" id="jump-overlay" onclick="fecharJump(event)">
   <div class="jump-panel" id="jump-panel">
     <div class="jump-row">
@@ -232,7 +229,6 @@ body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:
   </div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -253,7 +249,6 @@ body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:
   </div>
 </div>
 
-<!-- MODAL MENSAGEM -->
 <div class="overlay" id="overlay-msg">
   <div class="modal">
     <div class="modal-title">Nova mensagem <button class="modal-close" onclick="fecharModalMsg()">×</button></div>
@@ -289,7 +284,6 @@ body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:
   </div>
 </div>
 
-<!-- MODAL EVENTO -->
 <div class="overlay" id="overlay-ev">
   <div class="modal">
     <div class="modal-title">Novo evento <button class="modal-close" onclick="fecharModalEvento()">×</button></div>
@@ -322,16 +316,16 @@ body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:
 
 <script>
 // ══════════════════════════════════════════════════════
-// CONFIG
+// CONFIG (URL ATUALIZADA)
 // ══════════════════════════════════════════════════════
-let API_URL = 'https://script.google.com/macros/s/AKfycbymo9BjoVys6_B9kb_FNcoNH31IN3cc0hkSRKlLrcrUMU7jVTJ0aavnZ67yYR2pRb_J/exec';
+let API_URL = 'https://script.google.com/macros/s/AKfycbx8Kk3rEoL8xTDAc4mS-L5T95fmFRKfzZfON1WwDB8UjDJqXj1QMA8njfSvPmVDnTP9/exec';
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DAYS   = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 const EMOJIS = ['📍','🔴','🎥','🌿','❤️','🎯','⚠️','🟢','📣','🎉','🚀','💡','📆','🏆','🎪','🔔','📸','🎤','🗓️','⭐','🏅','🎊','💬','📲'];
 const canalDisplay = { wa:'📱 WA Grupo', email:'📧 E-mail', api:'⚙️ API Oficial', ig:'📸 Canal IG', tg:'✈️ Telegram', 'wa,tg':'📱+✈️ WA+TG', all:'🌐 Todos' };
 const prodLabels   = { ccav:'CCAV', scale:'Scale', master:'Master', icc:'ICC', outro:'Outro' };
-const catClass     = { cont:'msg-cont', ev:'msg-ev', com:'msg-com' };
+const catClass      = { cont:'msg-cont', ev:'msg-ev', com:'msg-com' };
 const typeLabels   = { comemorativa:'Data comemorativa', evento:'Evento presencial', lancamento:'Lançamento', interno:'Evento interno' };
 const typeBadge    = { comemorativa:'badge-blue', evento:'badge-green', lancamento:'badge-amber', interno:'badge-purple' };
 
@@ -389,18 +383,30 @@ function stopLoading() {
   setTimeout(() => { bar.style.width = '0%'; }, 400);
 }
 
-async function apiGet(action) {
-  const url = `${API_URL}?action=${action}&ano=${currentYear}&mes=${currentMonth}`;
-  const res  = await fetch(url);
-  return res.json();
+function apiGet(action) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'cb_' + Date.now();
+    const url = `${API_URL}?action=${action}&ano=${currentYear}&mes=${currentMonth}&callback=${cbName}`;
+    const script = document.createElement('script');
+    window[cbName] = (data) => {
+      delete window[cbName];
+      document.head.removeChild(script);
+      resolve(data);
+    };
+    script.onerror = () => reject(new Error('Erro de conexão'));
+    script.src = url;
+    document.head.appendChild(script);
+  });
 }
 
 async function apiPost(body) {
   const res = await fetch(API_URL, {
     method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(body),
   });
-  return res.json();
+  return { success: true };
 }
 
 // ══════════════════════════════════════════════════════
@@ -414,7 +420,6 @@ async function loadMonth() {
       apiGet('getMensagens'),
       apiGet('getEventos'),
     ]);
-    // fallback: if API returns error object
     if (!Array.isArray(messages)) messages = [];
     if (!Array.isArray(events))   events   = [];
     setStatus('ok');
