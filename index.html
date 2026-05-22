@@ -666,25 +666,36 @@ async function salvarEvento() {
   startLoading();
 
   try {
+    // Envia para o Sheets em segundo plano
     const res = await apiPost({ action:'addEvento', ano:currentYear, mes:currentMonth, diaIni, diaFim, tipo, nome, sub, emoji:selectedEmoji });
+    
     if (res.success) {
+      // Cria o objeto do evento localmente com um ID provisório para atualizar a tela na hora
+      const novoEv = { 
+        id: new Date().getTime(), 
+        ano: currentYear, 
+        mes: currentMonth, 
+        diaIni, 
+        diaFim, 
+        tipo, 
+        nome, 
+        sub, 
+        emoji: selectedEmoji 
+      };
+      
+      events.push(novoEv); // Adiciona na lista local
       fecharModalEvento();
-      await loadMonth();
-    } else { alert('Erro: ' + (res.error||'desconhecido')); }
-  } catch(e) { alert('Erro de conexão.'); }
+      renderCalendar();    // Remonta o calendário com o novo evento aparecendo
+      renderSidebar();     // Atualiza a barra lateral de eventos
+    } else { 
+      alert('Erro: ' + (res.error || 'desconhecido')); 
+    }
+  } catch(e) { 
+    alert('Erro de conexão.'); 
+  }
 
   stopLoading();
   btn.textContent = 'Adicionar'; btn.disabled = false;
-}
-
-async function deletarEvento(id) {
-  if (!confirm('Remover este evento?')) return;
-  startLoading();
-  try {
-    await apiPost({ action:'deleteEvento', id });
-    await loadMonth();
-  } catch(e) { alert('Erro ao remover.'); }
-  stopLoading();
 }
 
 // ══════════════════════════════════════════════════════
