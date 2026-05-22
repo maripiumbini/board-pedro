@@ -400,11 +400,17 @@ async function apiGet(action) {
 
 async function apiPost(body) {
   try {
+    // Transformamos os dados em parâmetros de formulário URL-encoded,
+    // que é o formato mais aceito e seguro para o Google Apps Script receber sem travar
+    const formBody = Object.keys(body)
+      .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(body[key]))
+      .join('&');
+
     await fetch(API_URL, {
       method: 'POST',
-      mode: 'no-cors', // Mantido para evitar bloqueio de envio do Apps Script
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(body),
+      mode: 'no-cors', // Mantém para não travar o navegador
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: formBody,
     });
     return { success: true };
   } catch (error) {
